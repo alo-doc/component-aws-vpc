@@ -1,0 +1,14 @@
+Pipeline:
+  StartAt: Build
+  States:
+    Build:
+      Type: Task
+      Resource: microtica.actions.cmd
+      Parameters:
+        commands:
+        - npm i
+        - npm t
+        - npm prune --production
+        sourceLocation: "$.source.location"
+        artifacts: true
+      End: true

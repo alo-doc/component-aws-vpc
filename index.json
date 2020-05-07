@@ -1,0 +1,306 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Microtica Environment component",
+    "Parameters": {
+        "stageId": {
+            "Description": "Stage ID",
+            "Type": "String"
+        },
+        "resourceId": {
+            "Description": "Resource ID",
+            "Type": "String"
+        },
+        "vpcCidr": {
+            "Description": "VPC CIDR block.",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x."
+        },
+        "subnet1Az": {
+            "Description": "Subnet 1 availability zone.",
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "eu-central-1a"
+        },
+        "subnet2Az": {
+            "Description": "Subnet 2 availability zone.",
+            "Type": "AWS::EC2::AvailabilityZone::Name",
+            "Default": "eu-central-1b"
+        },
+        "publicSubnet1Cidr": {
+            "Description": "Public subnet 1 CIDR block.",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x and subnet of VPC."
+        },
+        "privateSubnet1Cidr": {
+            "Description": "Private subnet 1 CIDR block.",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x and subnet of VPC."
+        },
+        "publicSubnet2Cidr": {
+            "Description": "Public subnet 2 CIDR block.",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x and subnet of VPC."
+        },
+        "privateSubnet2Cidr": {
+            "Description": "Private subnet 2 CIDR block.",
+            "Type": "String",
+            "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+            "ConstraintDescription": "Must be a valid IP CIDR range of the form x.x.x.x/x and subnet of VPC."
+        },
+        "natInstanceType": {
+            "Description": "Amazon EC2 instance type for the NAT instance. This instance will be put on public subnet 1.",
+            "Type": "String",
+            "Default": "t2.small",
+            "AllowedValues": [
+                "t2.micro",
+                "t2.small",
+                "t2.medium",
+                "t2.large"
+            ]
+        },
+        "keyName": {
+            "Description" : "Name of an existing EC2 KeyPair to enable SSH access to NAT instances",
+            "Type": "AWS::EC2::KeyPair::KeyName",
+            "ConstraintDescription" : "Must be the name of an existing EC2 KeyPair."
+        }
+    },
+
+    "Mappings": {
+        "AWSNATAMI": {
+            "us-east-2"      : {"AMI": "ami-8c002de9"},
+            "us-east-1"      : {"AMI": "ami-b419e7ce"},
+            "us-west-1"      : {"AMI": "ami-36ebdb56"},
+            "us-west-2"      : {"AMI": "ami-d08b70a8"},
+            "ap-south-1"      : {"AMI": "ami-6dc38202"},
+            "ap-northeast-2"      : {"AMI": "ami-61e03a0f"},
+            "ap-southeast-1"      : {"AMI": "ami-0597ea66"},
+            "ap-southeast-2"      : {"AMI": "ami-2c37d74e"},
+            "ap-northeast-1"      : {"AMI": "ami-17944271"},
+            "ca-central-1"      : {"AMI": "ami-f055ec94"},
+            "eu-central-1"      : {"AMI": "ami-3cec5e53"},
+            "eu-west-1"      : {"AMI": "ami-38d20741"},
+            "eu-west-2"      : {"AMI": "ami-e07d6f84"},
+            "eu-west-3"      : {"AMI": "ami-25d56258"},
+            "sa-east-1"      : {"AMI": "ami-6a354a06"}
+        }
+    },
+
+    "Resources": {
+        "Vpc": {
+            "Type": "AWS::EC2::VPC",
+            "Properties": {
+                "CidrBlock": {"Ref": "vpcCidr"},
+                "InstanceTenancy": "default",
+                "EnableDnsSupport": "true",
+                "EnableDnsHostnames": "true"
+            }
+        },
+        "PublicSubnet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {"Ref": "publicSubnet1Cidr"},
+                "AvailabilityZone": {"Ref" : "subnet1Az"},
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "PrivateSubnet1": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {"Ref": "privateSubnet1Cidr"},
+                "AvailabilityZone": {"Ref" : "subnet1Az"},
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "PublicSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {"Ref": "publicSubnet2Cidr"},
+                "AvailabilityZone": {"Ref" : "subnet2Az"},
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "PrivateSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "CidrBlock": {"Ref": "privateSubnet2Cidr"},
+                "AvailabilityZone": {"Ref" : "subnet2Az"},
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "InetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+            }
+        },
+        "AttachGateway": {
+            "Type": "AWS::EC2::VPCGatewayAttachment",
+            "Properties": {
+                "VpcId": {"Ref": "Vpc"},
+                "InternetGatewayId": {"Ref": "InetGateway"}
+            },
+            "DependsOn": "NatEc2InstanceEIP"
+        },
+        "RtbPublic": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "RoutePublic": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "RouteTableId": {"Ref": "RtbPublic"},
+                "GatewayId": {"Ref": "InetGateway"}
+            }
+        },
+        "SubnetRouteTableAssociationPublic1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {"Ref": "RtbPublic"},
+                "SubnetId": {"Ref": "PublicSubnet1"}
+            }
+        },
+        "SubnetRouteTableAssociationPublic2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {"Ref": "RtbPublic"},
+                "SubnetId": {"Ref": "PublicSubnet2"}
+            }
+        },
+        "RtbPrivate": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {"Ref": "Vpc"}
+            }
+        },
+        "SubnetRouteTableAssociationPrivate1": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {"Ref": "RtbPrivate"},
+                "SubnetId": {"Ref": "PrivateSubnet1"}
+            }
+        },
+        "SubnetRouteTableAssociationPrivate2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "Properties": {
+                "RouteTableId": {"Ref": "RtbPrivate"},
+                "SubnetId": {"Ref": "PrivateSubnet2"}
+            }
+        },
+        "NatEc2InstanceEIP": {
+            "Type" : "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": "vpc",
+                "InstanceId" : {
+                    "Ref": "NatEc2Instance"
+                }
+            }
+        },
+        "NatEc2Instance": {
+            "Type": "AWS::EC2::Instance",
+            "Properties": {
+                "DisableApiTermination": "false",
+                "InstanceInitiatedShutdownBehavior": "stop",
+                "InstanceType": {"Ref": "natInstanceType"},
+                "ImageId": {"Fn::FindInMap": ["AWSNATAMI", {"Ref": "AWS::Region"}, "AMI"]},
+                "KeyName": {"Ref": "keyName"},
+                "Monitoring": "false",
+                "SourceDestCheck": "false",
+                "NetworkInterfaces": [{
+                    "DeleteOnTermination": "true",
+                    "Description": "Primary network interface",
+                    "DeviceIndex": 0,
+                    "SubnetId": {"Ref": "PublicSubnet1"},
+                    "GroupSet": [{"Ref": "SgNat"}],
+                    "AssociatePublicIpAddress": "true"
+                }],
+                "Tags": [
+                    {"Key": "Name", "Value": {"Fn::Sub": "${stageId}-${resourceId}-nat"}}
+                ],
+                "UserData": {"Fn::Base64": {"Fn::Join": ["", [
+                    "#!/bin/bash -xe\n",
+
+                    "exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1\n"
+                ]]}}
+            }
+        },
+        "WaitHandle": {
+            "Type": "AWS::CloudFormation::WaitConditionHandle"
+        },
+        "SgNat": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Security group for NAT instances",
+                "VpcId": {"Ref": "Vpc"},
+                "SecurityGroupIngress": [
+                    {"IpProtocol": "-1", "CidrIp": {"Ref": "privateSubnet1Cidr"}},
+                    {"IpProtocol": "-1", "CidrIp": {"Ref": "privateSubnet2Cidr"}}
+                ],
+                "SecurityGroupEgress": [
+                    {"IpProtocol": "-1", "CidrIp": "0.0.0.0/0"}
+                ]
+            }
+        },
+        "RoutePrivate": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "RouteTableId": {"Ref": "RtbPrivate"},
+                "InstanceId": {"Ref": "NatEc2Instance"}
+            }
+        },
+        "ApiGatewayVPCEndpoint": {
+            "Type": "AWS::EC2::VPCEndpoint",
+            "Properties": {
+                "PrivateDnsEnabled": true,
+                "SecurityGroupIds": [
+                    { "Ref" : "SgNat" }
+                ],
+                "ServiceName": {
+                    "Fn::Sub": "com.amazonaws.${AWS::Region}.execute-api"
+                },
+                "SubnetIds": [
+                    { "Ref" : "PublicSubnet1" },
+                    { "Ref" : "PublicSubnet2" }
+                ],
+                "VpcId": {"Ref": "Vpc"},
+                "VpcEndpointType": "Interface"
+            }
+        }
+    },
+
+    "Outputs" : {
+        "vpcId" : {
+            "Description" : "The VPC",
+            "Value" :  { "Ref" : "Vpc" }
+        },
+        "publicSubnet1" : {
+            "Description" : "VPC public subnet1",
+            "Value" :  { "Ref" : "PublicSubnet1" }
+        },
+        "publicSubnet2" : {
+            "Description" : "VPC public subnet2",
+            "Value" :  { "Ref" : "PublicSubnet2" }
+        },
+        "privateSubnet1" : {
+            "Description" : "VPC private subnet1",
+            "Value" :  { "Ref" : "PrivateSubnet1" }
+        },
+        "privateSubnet2" : {
+            "Description" : "VPC private subnet2",
+            "Value" :  { "Ref" : "PrivateSubnet2" }
+        },
+        "keyName" : {
+            "Description" : "EC2 KeyPair to enable SSH access to NAT instances",
+            "Value" :  { "Ref" : "keyName" }
+        },
+        "sgNat" : {
+            "Description" : "NAT Security Group",
+            "Value" :  { "Ref" : "SgNat" }
+        }
+    }
+}

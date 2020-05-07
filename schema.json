@@ -1,0 +1,112 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "schema://microtica/VPC.json",
+    "title": "VPC schema",
+    "type": "object",
+    "required": [
+        "inputs"
+    ],
+    "properties": {
+        "inputs": {
+            "type": "object",
+            "properties": {
+                "keyName": {
+                    "type": "string",
+                    "description": "The name of the EC2 key pair to be used. This key will be attached to the NAT EC2 instance."
+                },
+                "natInstanceType": {
+                    "type": "string",
+                    "enum": [
+                        "t2.micro",
+                        "t2.medium",
+                        "t2.large"
+                    ],
+                    "default": "t2.micro",
+                    "description": "EC2 instance type for the NAT instance."
+                }
+            },
+            "required": [
+                "keyName",
+                "natInstanceType"
+            ],
+            "additionalProperties": false
+        },
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "stageId": {
+                    "type": "string"
+                },
+                "resourceId": {
+                    "type": "string"
+                },
+                "keyName": {
+                    "type": "string"
+                },
+                "natInstanceType": {
+                    "type": "string",
+                    "enum": [
+                        "t2.micro",
+                        "t2.medium",
+                        "t2.large"
+                    ]
+                },
+                "privateSubnet1Cidr": {
+                    "type": "string"
+                },
+                "privateSubnet2Cidr": {
+                    "type": "string"
+                },
+                "publicSubnet1Cidr": {
+                    "type": "string"
+                },
+                "publicSubnet2Cidr": {
+                    "type": "string"
+                },
+                "vpcCidr": {
+                    "type": "string"
+                },
+                "subnet1Az": {
+                    "type": "string"
+                },
+                "subnet2Az": {
+                    "type": "string"
+                }
+            }
+        },
+        "outputs": {
+            "type": "object",
+            "properties": {
+                "keyName": {
+                    "type": "string",
+                    "description": "The name of the EC2 key pair."
+                },
+                "privateSubnet1": {
+                    "type": "string",
+                    "description": "ID of the first private subnet."
+                },
+                "privateSubnet2": {
+                    "type": "string",
+                    "description": "ID of the second private subnet."
+                },
+                "publicSubnet1": {
+                    "type": "string",
+                    "description": "ID of the first public subnet."
+                },
+                "publicSubnet2": {
+                    "type": "string",
+                    "description": "ID of the second public subnet."
+                },
+                "sgNat": {
+                    "type": "string",
+                    "description": "ID of the security group attached on the NAT instance."
+                },
+                "vpcId": {
+                    "type": "string",
+                    "description": "ID of the VPC."
+                }
+            }
+        }
+    },
+    "additionalProperties": false
+}

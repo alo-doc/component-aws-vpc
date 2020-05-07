@@ -1,0 +1,49 @@
+{
+    "name": "@microtica/component-environment",
+    "version": "0.3.0",
+    "description": "Microtica common environment infrastructure component",
+    "main": "execute.js",
+    "scripts": {
+        "test": "npm run mocha",
+        "mocha": "./node_modules/.bin/nyc --reporter=lcov --reporter=text-summary node_modules/.bin/mocha --timeout 5000 --recursive test",
+        "deploy": "node deploy/index.js",
+        "destroy": "node destroy/index.js"
+    },
+    "nyc": {
+        "check-coverage": true,
+        "lines": 0,
+        "statements": 0,
+        "functions": 0,
+        "watermarks": {
+            "branches": [
+                10,
+                50
+            ],
+            "lines": [
+                90,
+                100
+            ],
+            "functions": [
+                90,
+                100
+            ],
+            "statements": [
+                90,
+                100
+            ]
+        }
+    },
+    "author": "Microtica",
+    "license": "ISC",
+    "dependencies": {
+        "@microtica/component": "^2.2.0"
+    },
+    "devDependencies": {
+        "@types/chai": "^4.1.7",
+        "@types/mocha": "^5.2.5",
+        "aws-sdk": "^2.418.0",
+        "chai": "^4.2.0",
+        "mocha": "^5.2.0",
+        "nyc": "^13.1.0"
+    }
+}
